@@ -1,64 +1,68 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Services\EmployeeService;
 use Illuminate\Http\Request;
+use Exception;
 
 class EmployeeController extends Controller
 {
-    public function index()
+    protected $service;
+
+    public function __construct(EmployeeService $service)
     {
-        $employees = Employee::with('workShift')->latest()->paginate(10);
-        return response()->json($employees);
+        $this->service = $service;
     }
 
-    public function show($id)
+    public function index()
     {
-        $employee = Employee::with('workShift')->findOrFail($id);
-        return response()->json($employee);
+        return response()->json(Employee::with('workShift')->get());
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'first_name'      => 'required|string|max:100',
-            'last_name'       => 'nullable|string|max:100',
-            'date_of_birth'   => 'nullable|date',
-            'gender'          => 'nullable|in:male,female,other',
-            'nik'             => 'required|string|unique:employees,nik',
-            'employee_number' => 'required|string|unique:employees,employee_number',
-            'position'        => 'required|string|max:100',
-            'work_shift_id'   => 'nullable|exists:work_shifts,id',
-        ]);
+        try {
+            $data = $request->validate([
+                'first_name'      => 'required|string',
+                'last_name'       => 'nullable|string',
+                'date_of_birth'   => 'nullable|date',
+                'gender'          => 'nullable|in:male,female,other',
+                'nik'             => 'required|string|unique:employees,nik',
+                'employee_number' => 'required|string|unique:employees,employee_number',
+                'position'        => 'required|string',
+                'work_shift_id'   => 'nullable|exists:work_shifts,id',
+            ]);
 
-        $employee = Employee::create($validated);
+            $employee = $this->service->create($data);
 
-        return response()->json(['message' => 'Employee created', 'data' => $employee], 201);
+            return response()->json($employee, 201);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
-    public function update(Request $request, $id)
+    public function show(Employee $employee)
     {
-        $employee = Employee::findOrFail($id);
-
-        $validated = $request->validate([
-            'first_name'      => 'sometimes|string|max:100',
-            'last_name'       => 'nullable|string|max:100',
-            'date_of_birth'   => 'nullable|date',
-            'gender'          => 'nullable|in:male,female,other',
-            'nik'             => 'sometimes|string|unique:employees,nik,' . $id,
-            'employee_number' => 'sometimes|string|unique:employees,employee_number,' . $id,
-            'position'        => 'sometimes|string|max:100',
-            'work_shift_id'   => 'nullable|exists:work_shifts,id',
-        ]);
-
-        $employee->update($validated);
-
-        return response()->json(['message' => 'Employee updated', 'data' => $employee]);
+        return response()->json($employee->load('workShift'));
     }
 
-    public function destroy($id)
+    public function update(Request $request, Employee $employee)
     {
-        Employee::findOrFail($id)->delete();
-        return response()->json(['message' => 'Employee deleted']);
+        try {
+            $data = $request->all();
+            $updated = $this->service->update($employee, $data);
+
+            return response()->json($updated);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function destroy(Employee $employee)
+    {
+        $this->service->delete($employee);
+        return response()->json(['message' => 'Deleted successfully']);
     }
 }

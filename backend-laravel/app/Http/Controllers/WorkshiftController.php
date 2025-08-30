@@ -3,57 +3,63 @@
 namespace App\Http\Controllers;
 
 use App\Models\WorkShift;
+use App\Services\WorkShiftService;
 use Illuminate\Http\Request;
+use Exception;
 
 class WorkShiftController extends Controller
 {
-    public function index()
+    protected $service;
+
+    public function __construct(WorkShiftService $service)
     {
-        $shifts = WorkShift::latest()->paginate(10);
-        return response()->json($shifts);
+        $this->service = $service;
     }
 
-    public function show($id)
+    public function index()
     {
-        $shift = WorkShift::findOrFail($id);
-        return response()->json($shift);
+        return response()->json(WorkShift::all());
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name'        => 'required|string|max:100',
-            'type'        => 'required|in:shift,fulltime',
-            'start_time'  => 'required|date_format:H:i',
-            'end_time'    => 'required|date_format:H:i|after:start_time',
-            'description' => 'nullable|string',
-        ]);
+        try {
+            $data = $request->validate([
+                'name'        => 'required|string',
+                'type'        => 'required|in:shift,fulltime',
+                'start_time'  => 'required|date_format:H:i',
+                'end_time'    => 'required|date_format:H:i',
+                'description' => 'nullable|string',
+            ]);
 
-        $shift = WorkShift::create($validated);
+            $shift = $this->service->create($data);
 
-        return response()->json(['message' => 'Work shift created', 'data' => $shift], 201);
+            return response()->json($shift, 201);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
-    public function update(Request $request, $id)
+    public function show(WorkShift $workShift)
     {
-        $shift = WorkShift::findOrFail($id);
-
-        $validated = $request->validate([
-            'name'        => 'sometimes|string|max:100',
-            'type'        => 'sometimes|in:shift,fulltime',
-            'start_time'  => 'sometimes|date_format:H:i',
-            'end_time'    => 'sometimes|date_format:H:i|after:start_time',
-            'description' => 'nullable|string',
-        ]);
-
-        $shift->update($validated);
-
-        return response()->json(['message' => 'Work shift updated', 'data' => $shift]);
+        return response()->json($workShift);
     }
 
-    public function destroy($id)
+    public function update(Request $request, WorkShift $workShift)
     {
-        WorkShift::findOrFail($id)->delete();
-        return response()->json(['message' => 'Work shift deleted']);
+        try {
+            $data = $request->all();
+            $updated = $this->service->update($workShift, $data);
+
+            return response()->json($updated);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function destroy(WorkShift $workShift)
+    {
+        $this->service->delete($workShift);
+        return response()->json(['message' => 'Deleted successfully']);
     }
 }
