@@ -7,6 +7,11 @@ use Illuminate\Validation\ValidationException;
 
 class AttendanceService
 {
+    public function getAll($perPage = 10)
+    {
+        return \App\Models\Attendance::paginate($perPage);
+    }
+
     public function create(array $data): Attendance
     {
         $lockKey = "attendance_lock:{$data['employee_id']}:{$data['shift_id']}:{$data['shift_date']}";

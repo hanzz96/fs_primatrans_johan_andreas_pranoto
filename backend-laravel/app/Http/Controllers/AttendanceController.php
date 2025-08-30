@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Api\Controller;
 use App\Models\Attendance;
 use Illuminate\Http\Request;
 use App\Services\AttendanceService;
@@ -14,10 +15,20 @@ class AttendanceController extends Controller
         $this->attendanceService = $attendanceService;
     }
 
-    public function index()
-    {
-        $attendances = Attendance::with(['employee', 'shift'])->latest()->paginate(10);
-        return response()->json($attendances);
+    public function index(Request $request)
+{
+    $perPage = $request->get('per_page', 10);
+    $attendances = $this->attendanceService->getAll($perPage);
+
+    return $this->responsePayload([
+        "data" => $attendances->items(),
+        "pagination" => [
+            "current_page" => $attendances->currentPage(),
+            "per_page" => $attendances->perPage(),
+            "total" => $attendances->total(),
+            "last_page" => $attendances->lastPage(),
+        ]
+        ]);
     }
 
     public function show($id)

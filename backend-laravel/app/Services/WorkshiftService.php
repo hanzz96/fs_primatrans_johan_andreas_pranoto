@@ -10,6 +10,11 @@ use Exception;
 class WorkShiftService
 {
     protected $lockTtl = 5; // seconds
+    
+    public function getAll($perPage = 10)
+    {
+        return \App\Models\WorkShift::paginate($perPage);
+    }
 
     public function create(array $data)
     {

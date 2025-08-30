@@ -1,65 +1,80 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
-use App\Models\WorkShift;
-use App\Services\WorkShiftService;
+use App\Http\Controllers\Api\Controller;
 use Illuminate\Http\Request;
-use Exception;
+use App\Services\WorkShiftService;
 
 class WorkShiftController extends Controller
 {
-    protected $service;
+    protected $workShiftService;
 
-    public function __construct(WorkShiftService $service)
+    public function __construct(WorkShiftService $workShiftService)
     {
-        $this->service = $service;
+        $this->workShiftService = $workShiftService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(WorkShift::all());
+        $perPage = $request->get('per_page', 10);
+        $workShifts = $this->workShiftService->getAll($perPage);
+    
+        return $this->responsePayload([
+            "data" => $workShifts->items(),
+            "pagination" => [
+                "current_page" => $workShifts->currentPage(),
+                "per_page" => $workShifts->perPage(),
+                "total" => $workShifts->total(),
+                "last_page" => $workShifts->lastPage(),
+            ]
+        ]);
     }
-
+    
     public function store(Request $request)
     {
-        try {
-            $data = $request->validate([
-                'name'        => 'required|string',
-                'type'        => 'required|in:shift,fulltime',
-                'start_time'  => 'required|date_format:H:i',
-                'end_time'    => 'required|date_format:H:i',
-                'description' => 'nullable|string',
-            ]);
+        $workShift = $this->workShiftService->create($request->all());
 
-            $shift = $this->service->create($data);
+        return $this->responsePayload([
+            "message" => "Work shift created successfully",
+            "data" => $workShift
+        ]);
+    }
 
-            return response()->json($shift, 201);
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
+    public function show($id)
+    {
+        $workShift = $this->workShiftService->findById($id);
+        if (!$workShift) {
+            return response()->json(["code" => 404, "message" => "Work shift not found"], 404);
         }
+
+        return $this->responsePayload([
+            "data" => $workShift
+        ]);
     }
 
-    public function show(WorkShift $workShift)
+    public function update(Request $request, $id)
     {
-        return response()->json($workShift);
-    }
+        $updated = $this->workShiftService->update($id, $request->all());
 
-    public function update(Request $request, WorkShift $workShift)
-    {
-        try {
-            $data = $request->all();
-            $updated = $this->service->update($workShift, $data);
-
-            return response()->json($updated);
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
+        if (!$updated) {
+            return response()->json(["code" => 404, "message" => "Work shift not found"], 404);
         }
+
+        return $this->responsePayload([
+            "message" => "Work shift updated successfully",
+            "data" => $updated
+        ]);
     }
 
-    public function destroy(WorkShift $workShift)
+    public function destroy($id)
     {
-        $this->service->delete($workShift);
-        return response()->json(['message' => 'Deleted successfully']);
+        $deleted = $this->workShiftService->delete($id);
+
+        if (!$deleted) {
+            return response()->json(["code" => 404, "message" => "Work shift not found"], 404);
+        }
+
+        return $this->responseSuccess("Work shift deleted successfully");
     }
 }

@@ -11,6 +11,11 @@ class EmployeeService
 {
     protected $lockTtl = 5;
 
+    public function getAll($perPage = 10)
+    {
+        return Employee::paginate($perPage);
+    }
+    
     public function create(array $data)
     {
         $lockKey = "employee_lock:" . md5($data['nik'] ?? '');

@@ -1,68 +1,80 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
-use App\Models\Employee;
-use App\Services\EmployeeService;
+use App\Http\Controllers\Api\Controller;
 use Illuminate\Http\Request;
-use Exception;
+use App\Services\EmployeeService;
 
 class EmployeeController extends Controller
 {
-    protected $service;
+    protected $employeeService;
 
-    public function __construct(EmployeeService $service)
+    public function __construct(EmployeeService $employeeService)
     {
-        $this->service = $service;
+        $this->employeeService = $employeeService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Employee::with('workShift')->get());
+        $perPage = $request->get('per_page', 10); // default 10 if not provided
+        $employees = $this->employeeService->getAll($perPage);
+    
+        return $this->responsePayload([
+            "data" => $employees->items(),
+            "pagination" => [
+                "current_page" => $employees->currentPage(),
+                "per_page" => $employees->perPage(),
+                "total" => $employees->total(),
+                "last_page" => $employees->lastPage(),
+            ]
+        ]);
     }
 
     public function store(Request $request)
     {
-        try {
-            $data = $request->validate([
-                'first_name'      => 'required|string',
-                'last_name'       => 'nullable|string',
-                'date_of_birth'   => 'nullable|date',
-                'gender'          => 'nullable|in:male,female,other',
-                'nik'             => 'required|string|unique:employees,nik',
-                'employee_number' => 'required|string|unique:employees,employee_number',
-                'position'        => 'required|string',
-                'work_shift_id'   => 'nullable|exists:work_shifts,id',
-            ]);
+        $employee = $this->employeeService->create($request->all());
 
-            $employee = $this->service->create($data);
+        return $this->responsePayload([
+            "message" => "Employee created successfully",
+            "data" => $employee
+        ]);
+    }
 
-            return response()->json($employee, 201);
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
+    public function show($id)
+    {
+        $employee = $this->employeeService->findById($id);
+        if (!$employee) {
+            return response()->json(["code" => 404, "message" => "Employee not found"], 404);
         }
+
+        return $this->responsePayload([
+            "data" => $employee
+        ]);
     }
 
-    public function show(Employee $employee)
+    public function update(Request $request, $id)
     {
-        return response()->json($employee->load('workShift'));
-    }
+        $updated = $this->employeeService->update($id, $request->all());
 
-    public function update(Request $request, Employee $employee)
-    {
-        try {
-            $data = $request->all();
-            $updated = $this->service->update($employee, $data);
-
-            return response()->json($updated);
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
+        if (!$updated) {
+            return response()->json(["code" => 404, "message" => "Employee not found"], 404);
         }
+
+        return $this->responsePayload([
+            "message" => "Employee updated successfully",
+            "data" => $updated
+        ]);
     }
 
-    public function destroy(Employee $employee)
+    public function destroy($id)
     {
-        $this->service->delete($employee);
-        return response()->json(['message' => 'Deleted successfully']);
+        $deleted = $this->employeeService->delete($id);
+
+        if (!$deleted) {
+            return response()->json(["code" => 404, "message" => "Employee not found"], 404);
+        }
+
+        return $this->responseSuccess("Employee deleted successfully");
     }
 }
