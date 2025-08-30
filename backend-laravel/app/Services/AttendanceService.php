@@ -9,38 +9,39 @@ class AttendanceService
 {
     public function getAll($perPage = 10)
     {
-        return \App\Models\Attendance::paginate($perPage);
+        return Attendance::with('employee')->paginate($perPage);
     }
 
     public function create(array $data): Attendance
     {
-        $lockKey = "attendance_lock:{$data['employee_id']}:{$data['shift_id']}:{$data['shift_date']}";
+        $lockKey = "attendance_lock:{$data['employee_id']}:{$data['attendance_date']}";
 
-        // try to acquire lock for 5 seconds
         $lock = Cache::lock($lockKey, 5);
 
         if ($lock->get()) {
             try {
-                // Check duplicate inside lock
+                // Cek duplicate (employee + date)
                 $exists = Attendance::where('employee_id', $data['employee_id'])
-                    ->where('shift_id', $data['shift_id'])
-                    ->where('shift_date', $data['shift_date'])
+                    ->where('attendance_date', $data['attendance_date'])
                     ->exists();
 
                 if ($exists) {
                     throw ValidationException::withMessages([
-                        'duplicate' => ['Attendance already exists for this employee, shift, and date.'],
+                        'duplicate' => ['Attendance already exists for this employee on that date.'],
                     ]);
                 }
 
-                return Attendance::create($data);
+                return Attendance::create([
+                    'employee_id'     => $data['employee_id'],
+                    'attendance_date' => $data['attendance_date'],
+                    'check_in'        => $data['check_in'] ?? null,
+                    'check_out'       => $data['check_out'] ?? null,
+                ]);
             } finally {
-                // always release the lock
                 $lock->release();
             }
         }
 
-        // If unable to acquire lock → concurrency issue
         throw ValidationException::withMessages([
             'concurrency' => ['Another attendance creation is in progress, please try again.'],
         ]);
@@ -49,27 +50,32 @@ class AttendanceService
     public function update(Attendance $attendance, array $data): Attendance
     {
         $employeeId = $data['employee_id'] ?? $attendance->employee_id;
-        $shiftId    = $data['shift_id'] ?? $attendance->shift_id;
-        $shiftDate  = $data['shift_date'] ?? $attendance->shift_date;
-        $lockKey = "attendance_lock:{$employeeId}:{$shiftId}:{$shiftDate}";
+        $date       = $data['attendance_date'] ?? $attendance->attendance_date;
+
+        $lockKey = "attendance_lock:{$employeeId}:{$date}";
 
         $lock = Cache::lock($lockKey, 5);
 
         if ($lock->get()) {
             try {
-                $exists = Attendance::where('employee_id', $data['employee_id'] ?? $attendance->employee_id)
-                    ->where('shift_id', $data['shift_id'] ?? $attendance->shift_id)
-                    ->where('shift_date', $data['shift_date'] ?? $attendance->shift_date)
+                $exists = Attendance::where('employee_id', $employeeId)
+                    ->where('attendance_date', $date)
                     ->where('id', '!=', $attendance->id)
                     ->exists();
 
                 if ($exists) {
                     throw ValidationException::withMessages([
-                        'duplicate' => ['Attendance already exists for this employee, shift, and date.'],
+                        'duplicate' => ['Attendance already exists for this employee on that date.'],
                     ]);
                 }
 
-                $attendance->update($data);
+                $attendance->update([
+                    'employee_id'     => $employeeId,
+                    'attendance_date' => $date,
+                    'check_in'        => $data['check_in'] ?? $attendance->check_in,
+                    'check_out'       => $data['check_out'] ?? $attendance->check_out,
+                ]);
+
                 return $attendance;
             } finally {
                 $lock->release();

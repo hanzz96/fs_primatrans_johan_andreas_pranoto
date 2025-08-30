@@ -11,6 +11,10 @@ class Employee extends Model
         'nik','employee_number','position','work_shift_id'
     ];
 
+    protected $casts = [
+        'birth_date' => 'date:Y-m-d',
+    ];
+
     public function workShift()
     {
         return $this->belongsTo(WorkShift::class);

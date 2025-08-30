@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\EmployeeService;
+use App\Models\Employee;
+use Exception;
 
 class EmployeeController extends Controller
 {
@@ -17,64 +19,77 @@ class EmployeeController extends Controller
 
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 10); // default 10 if not provided
+        $perPage = $request->get('per_page', 10);
         $employees = $this->employeeService->getAll($perPage);
-    
+
         return $this->responsePayload([
-            "data" => $employees->items(),
-            "pagination" => [
-                "current_page" => $employees->currentPage(),
-                "per_page" => $employees->perPage(),
-                "total" => $employees->total(),
-                "last_page" => $employees->lastPage(),
-            ]
+            "data" => $employees
+        ]);
+    }
+
+    public function show(Employee $employee)
+    {
+        return $this->responsePayload([
+            "data" => $employee
         ]);
     }
 
     public function store(Request $request)
     {
-        $employee = $this->employeeService->create($request->all());
-
-        return $this->responsePayload([
-            "message" => "Employee created successfully",
-            "data" => $employee
+        $data = $request->validate([
+            "first_name" => "required|string",
+            "last_name" => "required|string",
+            "birth_date" => "required|date",   // changed
+            "gender" => "required|string|in:male,female",
+            "nik" => "required|string",
+            "employee_number" => "required|string",
+            "position" => "required|string",
+            "work_shift_id" => "nullable|exists:work_shifts,id"
         ]);
+
+        try {
+            $employee = $this->employeeService->create($data);
+
+            return $this->responsePayload([
+                "message" => "Employee created successfully",
+                "data" => $employee
+            ]);
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage(), 422);
+        }
     }
 
-    public function show($id)
+    public function update(Request $request, Employee $employee)
     {
-        $employee = $this->employeeService->findById($id);
-        if (!$employee) {
-            return response()->json(["code" => 404, "message" => "Employee not found"], 404);
-        }
-
-        return $this->responsePayload([
-            "data" => $employee
+        $data = $request->validate([
+            "first_name" => "sometimes|string",
+            "last_name" => "sometimes|string",
+            "birth_date" => "sometimes|date",   // changed
+            "gender" => "sometimes|string|in:male,female",
+            "nik" => "sometimes|string",
+            "employee_number" => "sometimes|string",
+            "position" => "sometimes|string",
+            "work_shift_id" => "nullable|exists:work_shifts,id"
         ]);
+        try {
+            $updatedEmployee = $this->employeeService->update($employee, $data);
+
+            return $this->responsePayload([
+                "message" => "Employee updated successfully",
+                "data" => $updatedEmployee
+            ]);
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage(), 422);
+        }
     }
 
-    public function update(Request $request, $id)
+    public function destroy(Employee $employee)
     {
-        $updated = $this->employeeService->update($id, $request->all());
-
-        if (!$updated) {
-            return response()->json(["code" => 404, "message" => "Employee not found"], 404);
+        try {
+            $this->employeeService->delete($employee);
+            return $this->responseSuccess("Employee deleted successfully");
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage(), 422);
         }
-
-        return $this->responsePayload([
-            "message" => "Employee updated successfully",
-            "data" => $updated
-        ]);
-    }
-
-    public function destroy($id)
-    {
-        $deleted = $this->employeeService->delete($id);
-
-        if (!$deleted) {
-            return response()->json(["code" => 404, "message" => "Employee not found"], 404);
-        }
-
-        return $this->responseSuccess("Employee deleted successfully");
     }
 }

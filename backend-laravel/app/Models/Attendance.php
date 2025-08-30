@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,20 +11,19 @@ class Attendance extends Model
 
     protected $fillable = [
         'employee_id',
-        'shift_id',
-        'shift_date',
+        'attendance_date',
         'check_in',
         'check_out',
-        // 'status',
+    ];
+
+    protected $casts = [
+        'attendance_date' => 'date',
+        'check_in'        => 'datetime:H:i',
+        'check_out'       => 'datetime:H:i',
     ];
 
     public function employee()
     {
         return $this->belongsTo(Employee::class);
-    }
-
-    public function shift()
-    {
-        return $this->belongsTo(WorkShift::class);
     }
 }
