@@ -62,18 +62,19 @@ class EmployeeController extends Controller
 
     public function update(Request $request, Employee $employee)
     {
-        $data = $request->validate([
-            "first_name" => "sometimes|string",
-            "last_name" => "sometimes|string",
-            "birth_date" => "sometimes|date",   // changed
-            "gender" => "sometimes|string|in:male,female",
-            "nik" => "sometimes|string",
-            "employee_number" => "sometimes|string",
-            "position" => "sometimes|string",
-            "work_shift_id" => "nullable|exists:work_shifts,id"
-        ]);
         try {
-            $updatedEmployee = $this->employeeService->update($employee, $data);
+            $data = $request->validate([
+                "id" => "int|required",
+                "first_name" => "sometimes|string",
+                "last_name" => "sometimes|string",
+                "birth_date" => "sometimes|date",   // changed
+                "gender" => "sometimes|string|in:male,female",
+                "nik" => "sometimes|string",
+                "employee_number" => "sometimes|string",
+                "position" => "sometimes|string",
+                "work_shift_id" => "nullable|exists:work_shifts,id"
+            ]);
+            $updatedEmployee = $this->employeeService->update($data);
 
             return $this->responsePayload([
                 "message" => "Employee updated successfully",

@@ -18,16 +18,16 @@ class EmployeeService
             ->orderBy('employees.id', 'desc');
 
         if ($search) {
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('employees.first_name', 'like', "%{$search}%")
-                ->orWhere('employees.last_name', 'like', "%{$search}%");
+                    ->orWhere('employees.last_name', 'like', "%{$search}%");
             });
         }
 
         $employees = $query->paginate($perPage);
         return $employees;
     }
-    
+
     public function create(array $data)
     {
         $lockKey = "employee_lock:" . md5($data['nik'] ?? '');
@@ -46,31 +46,35 @@ class EmployeeService
                 throw new Exception("Employee with same NIK or employee number already exists.");
             }
 
-            return DB::transaction(fn () => Employee::create($data));
-        } catch(\Exception $e) {
+            return DB::transaction(fn() => Employee::create($data));
+        } catch (\Exception $e) {
             throw $e;
         } finally {
             Redis::del($lockKey);
         }
     }
 
-    public function update(Employee $employee, array $data)
+    public function update(array $data)
     {
-        $lockKey = "employee_update_lock:{$employee->id}";
-        if (!Redis::setnx($lockKey, 1)) {
-            throw new Exception("Employee update is locked. Try again later.");
-        }
-        Redis::expire($lockKey, $this->lockTtl);
-
         try {
+            $employee = Employee::find($data['id']);
+            if (!$employee) {
+                throw new Exception('Employee not found');
+            }
+            $lockKey = "employee_update_lock:{$employee->id}";
+            if (!Redis::setnx($lockKey, 1)) {
+                throw new Exception("Employee update is locked. Try again later.");
+            }
+            Redis::expire($lockKey, $this->lockTtl);
+
             $exists = Employee::where(function ($q) use ($data, $employee) {
-                    if (isset($data['nik'])) {
-                        $q->where('nik', $data['nik']);
-                    }
-                    if (isset($data['employee_number'])) {
-                        $q->orWhere('employee_number', $data['employee_number']);
-                    }
-                })
+                if (isset($data['nik'])) {
+                    $q->where('nik', $data['nik']);
+                }
+                if (isset($data['employee_number'])) {
+                    $q->orWhere('employee_number', $data['employee_number']);
+                }
+            })
                 ->where('id', '!=', $employee->id)
                 ->exists();
 
@@ -80,17 +84,19 @@ class EmployeeService
 
             $employee->update($data);
             return $employee;
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         } finally {
-            Redis::del($lockKey);
+            if($lockKey) {
+                Redis::del($lockKey);
+            }
         }
     }
 
     public function delete(int $employee)
     {
         $findEmployee = Employee::find($employee);
-        if($findEmployee) {
+        if ($findEmployee) {
             return $findEmployee->delete();
         }
         return false;
