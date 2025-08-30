@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Models\Attendance;
+use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
@@ -54,9 +55,13 @@ class AttendanceService
         }
     }
 
-    public function update(Attendance $attendance, array $data): Attendance
+    public function update(int $id, array $data): Attendance
     {
         try {
+            $attendance = Attendance::find($id);
+            if(!$attendance) {
+                throw new Exception("Attendance not found!");
+            }
             $employeeId = $data['employee_id'] ?? $attendance->employee_id;
             $date       = $data['attendance_date'] ?? $attendance->attendance_date;
 
@@ -97,9 +102,13 @@ class AttendanceService
         }
     }
 
-    public function delete(Attendance $attendance): bool
+    public function delete(int $id): bool
     {
         try {
+            $attendance = Attendance::find($id);
+            if(!$attendance) {
+                throw new Exception('Attendance not found');
+            }
             return $attendance->delete();
         } catch (\Exception $e) {
             throw $e;

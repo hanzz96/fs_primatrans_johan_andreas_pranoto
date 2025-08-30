@@ -248,7 +248,11 @@ function Employees() {
             />
 
             <div className="mt-2">
-            <AsyncSelect
+            <AsyncSelect  
+                menuPortalTarget={document.body}
+                styles={{
+                  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                }}
                 cacheOptions={false}
                 defaultOptions={options}
                 loadOptions={fetchWorkShifts}

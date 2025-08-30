@@ -13,7 +13,7 @@ class EmployeeService
 
     public function getAll($perPage = 10, $search)
     {
-        $query = Employee::select('employees.*', 'work_shifts.name as work_shift_name')
+        $query = Employee::select('employees.*', 'work_shifts.name as work_shift_name', DB::raw("concat(employees.first_name, ' ' , employees.last_name) as full_name"))
             ->leftJoin('work_shifts', 'employees.work_shift_id', '=', 'work_shifts.id')
             ->orderBy('employees.id', 'desc');
 
@@ -23,6 +23,7 @@ class EmployeeService
                     ->orWhere('employees.last_name', 'like', "%{$search}%");
             });
         }
+
 
         $employees = $query->paginate($perPage);
         return $employees;
