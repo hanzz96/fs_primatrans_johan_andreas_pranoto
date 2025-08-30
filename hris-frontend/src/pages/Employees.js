@@ -116,6 +116,7 @@ function Employees() {
       await dispatch(deleteEmployee(id)).unwrap();
       await dispatch(fetchEmployees(page)).unwrap();
     } catch (error) {
+      handleApiError(error);
       console.error("Error deleting employee:", error);
     } finally {
       setIsDeleting(false);

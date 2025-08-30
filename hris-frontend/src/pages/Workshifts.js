@@ -62,7 +62,12 @@ function WorkShifts() {
 
   const handleDelete = (id) => {
     if (window.confirm("Are you sure to delete this workshift?")) {
-      dispatch(deleteWorkshift(id));
+      try{
+        dispatch(deleteWorkshift(id));
+      }
+      catch(error){
+        handleApiError(error);
+      }
     }
   };
 
