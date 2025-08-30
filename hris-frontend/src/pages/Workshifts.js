@@ -87,7 +87,7 @@ function WorkShifts() {
       sortable: false,
       filterable: false,
       renderCell: ({ row }) => (
-        <div className="flex space-x-2">
+        <div className="w-full h-full flex items-center justify-start space-x-2">
           <Button variant="contained" color="warning" size="small" onClick={() => handleEdit(row)}>
             Edit
           </Button>

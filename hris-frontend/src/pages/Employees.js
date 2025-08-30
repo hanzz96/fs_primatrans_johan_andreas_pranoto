@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import AsyncSelect from "react-select/async";
 import { useDispatch, useSelector } from "react-redux";
+import { debounce } from "lodash";
 import {
   fetchEmployees,
   createEmployee,
@@ -48,6 +49,26 @@ function Employees() {
     }
 
   }, [employeeStatus, page, dispatch, workShiftStatus]);
+
+  const debouncedFetchWorkShifts = React.useMemo(
+    () =>
+      debounce(async (inputValue, callback) => {
+        try {
+          const data = await dispatch(searchWorkShifts(inputValue)).unwrap();
+          const mapped = data.map((shift) => ({
+            value: shift.id,
+            label: shift.name,
+          }));
+          setOptions(mapped);
+          callback(mapped);
+        } catch (error) {
+          console.error(error);
+          callback([]);
+        }
+      }, 500), // 500ms debounce
+    [dispatch]
+  );
+
 
   const fetchWorkShifts = async (inputValue = "") => {
     try {
@@ -108,6 +129,22 @@ function Employees() {
     }
   };
 
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setForm({
+      id: null,
+      first_name: "",
+      last_name: "",
+      birth_date: "",
+      gender: "male",
+      nik: "",
+      employee_number: "",
+      position: "",
+      work_shift_id: null,
+      work_shift_name: "",
+    });
+  };
+
   const handleDelete = async (id) => {
     if (isDeleting) return; // prevent double click
     setIsDeleting(true);
@@ -143,20 +180,14 @@ function Employees() {
       headerName: "Actions",
       flex: 1,
       renderCell: (params) => (
-        <div className="space-x-2">
-          <button
-            className="px-3 py-1 bg-yellow-500 text-white rounded"
-            onClick={() => handleEdit(params.row)}
-          >
+        <div className="w-full h-full flex items-center justify-start space-x-2">
+          <Button variant="contained" color="warning" size="small" onClick={() => handleEdit(params.row)}>
             Edit
-          </button>
-          <button
-            className="px-3 py-1 bg-red-600 text-white rounded"
-            onClick={() => handleDelete(params.row.id)}
-            disabled={isDeleting} // disable button while deleting
-          >
-            {isDeleting ? "Deleting..." : "Delete"}
-          </button>
+          </Button>
+          <Button variant="contained" color="error" size="small" onClick={() => handleDelete(params.row.id)} disabled={isDeleting}>
+            
+          {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
         </div>
       ),
     },
@@ -186,7 +217,7 @@ function Employees() {
         />
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} onClose={handleModalClose}>
         <div className="bg-white p-6 rounded shadow-md w-96 mx-auto mt-20">
           <h3 className="text-lg font-bold mb-4">
             {form.id ? "Edit Employee" : "Add Employee"}
@@ -258,7 +289,7 @@ function Employees() {
                 }}
                 cacheOptions={false}
                 defaultOptions={options}
-                loadOptions={fetchWorkShifts}
+                loadOptions={debouncedFetchWorkShifts}
                 onMenuOpen={() => fetchWorkShifts()}
                 onChange={(selected) =>
                   setForm({

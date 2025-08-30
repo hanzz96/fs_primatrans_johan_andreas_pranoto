@@ -16,6 +16,20 @@ export const fetchEmployees = createAsyncThunk(
   }
 );
 
+// Search
+export const searchEmployees = createAsyncThunk(
+  "employees/search",
+  async (query, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_URL}`, { params: { search: query } });
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error || { message: error.message });
+    }
+  }
+);
+
+
 // Create
 export const createEmployee = createAsyncThunk(
   "employees/create",
