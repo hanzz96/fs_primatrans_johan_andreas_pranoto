@@ -1,3 +1,6 @@
+PHP Version 8.4.3 used
+
+
 docker-compose up -d
 
 
