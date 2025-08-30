@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Api\Controller;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\WorkShiftService;
 
@@ -30,7 +30,7 @@ class WorkShiftController extends Controller
             ]
         ]);
     }
-    
+
     public function store(Request $request)
     {
         $workShift = $this->workShiftService->create($request->all());
