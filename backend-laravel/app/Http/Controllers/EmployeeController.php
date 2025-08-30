@@ -60,11 +60,10 @@ class EmployeeController extends Controller
         }
     }
 
-    public function update(Request $request, Employee $employee)
+    public function update(Request $request, $id)
     {
         try {
             $data = $request->validate([
-                "id" => "int|required",
                 "first_name" => "sometimes|string",
                 "last_name" => "sometimes|string",
                 "birth_date" => "sometimes|date",   // changed
@@ -74,7 +73,7 @@ class EmployeeController extends Controller
                 "position" => "sometimes|string",
                 "work_shift_id" => "nullable|exists:work_shifts,id"
             ]);
-            $updatedEmployee = $this->employeeService->update($data);
+            $updatedEmployee = $this->employeeService->update($id, $data);
 
             return $this->responsePayload([
                 "message" => "Employee updated successfully",

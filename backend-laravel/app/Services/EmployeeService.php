@@ -54,10 +54,10 @@ class EmployeeService
         }
     }
 
-    public function update(array $data)
+    public function update(int $id, array $data)
     {
         try {
-            $employee = Employee::find($data['id']);
+            $employee = Employee::find($id);
             if (!$employee) {
                 throw new Exception('Employee not found');
             }
