@@ -83,7 +83,7 @@ class EmployeeController extends Controller
         }
     }
 
-    public function destroy(Employee $employee)
+    public function destroy(int $employee)
     {
         try {
             $this->employeeService->delete($employee);

@@ -75,8 +75,12 @@ class EmployeeService
         }
     }
 
-    public function delete(Employee $employee)
+    public function delete(int $employee)
     {
-        $employee->delete();
+        $findEmployee = Employee::find($employee);
+        if($findEmployee) {
+            return $findEmployee->delete();
+        }
+        return false;
     }
 }
