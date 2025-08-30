@@ -39,55 +39,43 @@ class WorkShiftService
                 ]);
             }
 
-            return DB::transaction(fn () => WorkShift::create([
+            return DB::transaction(fn() => WorkShift::create([
                 'name'       => $data['name'],
                 'type'       => $data['type'],
-                'start_time' => $data['start_time'],
-                'end_time'   => $data['end_time'],
+                'descriptoin' => $data['description'],
             ]));
         } finally {
             Redis::del($lockKey);
         }
     }
 
-    public function update(WorkShift $workShift, array $data)
+    public function update($id, array $data)
     {
-        $lockKey = "workshift_update_lock:{$workShift->id}";
-
-        if (!Redis::setnx($lockKey, 1)) {
-            throw ValidationException::withMessages([
-                'concurrency' => ['WorkShift update is locked. Try again later.'],
-            ]);
-        }
-        Redis::expire($lockKey, $this->lockTtl);
-
         try {
-            $exists = WorkShift::where('name', $data['name'] ?? $workShift->name)
-                ->where('type', $data['type'] ?? $workShift->type)
-                ->where('id', '!=', $workShift->id)
-                ->exists();
-
-            if ($exists) {
+            $lockKey = "workshift_update_lock:{$id}";
+            if (!Redis::setnx($lockKey, 1)) {
                 throw ValidationException::withMessages([
-                    'duplicate' => ['Another WorkShift with same name and type already exists.'],
+                    'concurrency' => ['WorkShift update is locked. Try again later.'],
                 ]);
             }
+            $workShift = Workshift::find($id);
+            Redis::expire($lockKey, $this->lockTtl);
 
-            $workShift->update([
-                'name'       => $data['name']       ?? $workShift->name,
-                'type'       => $data['type']       ?? $workShift->type,
-                'start_time' => $data['start_time'] ?? $workShift->start_time,
-                'end_time'   => $data['end_time']   ?? $workShift->end_time,
-            ]);
-
+            $workShift->update($data);
             return $workShift;
         } finally {
             Redis::del($lockKey);
         }
     }
 
-    public function delete(WorkShift $workShift)
+    public function delete($id)
     {
-        return $workShift->delete();
+        $workShift = WorkShift::find($id);
+        if($workShift) {
+            return $workShift->delete();
+        }
+
+        return false;
+
     }
 }
