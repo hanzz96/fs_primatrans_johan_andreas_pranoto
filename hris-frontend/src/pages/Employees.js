@@ -1,5 +1,6 @@
 // src/pages/Employees.jsx
 import React, { useEffect, useState } from "react";
+import AsyncSelect from "react-select/async";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchEmployees,
@@ -7,13 +8,18 @@ import {
   updateEmployee,
   deleteEmployee,
 } from "../features/employee/employeeSlice";
+import {
+  searchWorkShifts
+} from "../features/workshift/workshiftSlice";
 
 import { DataGrid } from "@mui/x-data-grid";
 import { Button, Modal, TextField, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 
 function Employees() {
   const dispatch = useDispatch();
-  const { items, status } = useSelector((state) => state.employees);
+  const { items: employees, status: employeeStatus } = useSelector((state) => state.employees);
+  const { items: workShifts, status: workShiftStatus } = useSelector((state) => state.workshifts);
+
 
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
@@ -32,13 +38,39 @@ function Employees() {
   // New loading states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [options, setOptions] = useState([]);
 
   useEffect(() => {
-    if (status === "idle") {
+    if (employeeStatus === "idle") {
       dispatch(fetchEmployees(page));
+      
     }
-  }, [status, page, dispatch]);
 
+  }, [employeeStatus, page, dispatch, workShiftStatus]);
+
+  const fetchWorkShifts = async (inputValue = "") => {
+    try {
+      const data = await dispatch(searchWorkShifts(inputValue)).unwrap();
+      const mapped = data.map((shift) => ({
+        value: shift.id,
+        label: shift.name,
+      }));
+      setOptions(mapped);
+  
+      // If form has an ID but no name yet, fill it from the fetched options
+      if (form.work_shift_id && !form.work_shift_name) {
+        const current = mapped.find((s) => s.value === form.work_shift_id);
+        if (current) setForm({ ...form, work_shift_name: current.label });
+      }
+  
+      return mapped;
+    } catch (error) {
+      console.error("Error fetching work shifts:", error);
+      return [];
+    }
+  };
+
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -102,7 +134,7 @@ function Employees() {
     { field: "nik", headerName: "NIK", flex: 1 },
     { field: "employee_number", headerName: "Employee Number", flex: 1 },
     { field: "position", headerName: "Position", flex: 1 },
-    { field: "work_shift", headerName: "Work Shift", flex: 1 },
+    { field: "work_shift_name", headerName: "Work Shift", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -143,7 +175,7 @@ function Employees() {
 
       <div style={{ height: 500, width: "100%" }}>
         <DataGrid
-          rows={items}
+          rows={employees}
           columns={columns}
           pageSize={10}
           rowsPerPageOptions={[5, 10, 20]}
@@ -214,16 +246,37 @@ function Employees() {
               onChange={(e) => setForm({ ...form, position: e.target.value })}
               required
             />
-            <TextField
-              fullWidth
-              label="Work Shift ID"
-              type="number"
-              value={form.work_shift_id || ""}
-              onChange={(e) =>
-                setForm({ ...form, work_shift_id: Number(e.target.value) })
-              }
-            />
 
+            <div className="mt-2">
+            <AsyncSelect
+                cacheOptions={false}
+                defaultOptions={options}
+                loadOptions={fetchWorkShifts}
+                onMenuOpen={() => fetchWorkShifts()}
+                onChange={(selected) =>
+                  setForm({
+                    ...form,
+                    work_shift_id: selected?.value,
+                    work_shift_name: selected?.label,
+                  })
+                }
+                // Combine options with current selection to ensure it displays
+                value={
+                  form.work_shift_id
+                    ? {
+                        value: form.work_shift_id,
+                        label:
+                          form.work_shift_name ||
+                          (options.find((o) => o.value === form.work_shift_id)?.label ??
+                            "Loading..."),
+                      }
+                    : null
+                }
+                placeholder="Select Work Shift"
+                loadingMessage={() => "Loading..."}
+                noOptionsMessage={() => "No work shifts found"}
+              />
+            </div>
             <div className="flex justify-end space-x-2 mt-4">
               <Button
                 variant="outlined"

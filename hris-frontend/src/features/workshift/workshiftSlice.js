@@ -40,6 +40,15 @@ export const deleteWorkshift = createAsyncThunk(
   }
 );
 
+export const searchWorkShifts = createAsyncThunk(
+    "workShifts/search",
+    async (query) => {
+      const response = await axios.get(API_URL, { params: { search: query } });
+      console.log(response.data.data)
+      return response.data.data;
+    }
+);
+
 const workshiftSlice = createSlice({
   name: "workshifts",
   initialState: {
@@ -61,21 +70,6 @@ const workshiftSlice = createSlice({
         console.log(state.items)
         state.status = "succeeded";
       })
-      // Create
-      .addCase(createWorkshift.fulfilled, (state, action) => {
-        state.items.push(action.payload);
-      })
-      // Update
-      .addCase(updateWorkshift.fulfilled, (state, action) => {
-        const index = state.items.findIndex(
-          (w) => w.id === action.payload.id
-        );
-        if (index !== -1) state.items[index] = action.payload;
-      })
-      // Delete
-      .addCase(deleteWorkshift.fulfilled, (state, action) => {
-        state.items = state.items.filter((w) => w.id !== action.payload);
-      });
   },
 });
 

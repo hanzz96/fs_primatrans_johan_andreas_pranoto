@@ -61,7 +61,7 @@ const employeeSlice = createSlice({
           nik: emp.nik ?? "",
           employee_number: emp.employee_number ?? "",
           position: emp.position ?? "",
-          work_shift: emp.work_shift?.name ?? "-",
+          work_shift_name: emp.work_shift_name ?? "-",
           work_shift_id: emp.work_shift_id ?? null,
         }));
         state.pagination = action.payload.pagination;
