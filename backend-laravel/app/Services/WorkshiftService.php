@@ -11,9 +11,17 @@ class WorkShiftService
 {
     protected $lockTtl = 5; // seconds
 
-    public function getAll($perPage = 10)
+    public function getAll($perPage = 10, $search)
     {
-        return WorkShift::paginate($perPage);
+        
+        $query = WorkShift::query();
+
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('type', 'like', "%{$search}%");
+        }
+
+        return $query->orderBy('name')->paginate($perPage);
     }
 
     public function create(array $data)

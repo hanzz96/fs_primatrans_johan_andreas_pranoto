@@ -11,9 +11,21 @@ class EmployeeService
 {
     protected $lockTtl = 5;
 
-    public function getAll($perPage = 10)
+    public function getAll($perPage = 10, $search)
     {
-        return Employee::paginate($perPage);
+        $query = Employee::select('employees.*', 'work_shifts.name as work_shift_name')
+            ->leftJoin('work_shifts', 'employees.work_shift_id', '=', 'work_shifts.id')
+            ->orderBy('employees.id', 'desc');
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('employees.first_name', 'like', "%{$search}%")
+                ->orWhere('employees.last_name', 'like', "%{$search}%");
+            });
+        }
+
+        $employees = $query->paginate($perPage);
+        return $employees;
     }
     
     public function create(array $data)

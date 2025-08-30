@@ -19,7 +19,8 @@ class WorkShiftController extends Controller
     {
         try {
             $perPage = $request->get('per_page', 10);
-            $workShifts = $this->workShiftService->getAll($perPage);
+            $search = $request->input('search', null);
+            $workShifts = $this->workShiftService->getAll($perPage, $search);
         
             return $this->responsePayload([
                 "data" => $workShifts->items(),
