@@ -6,6 +6,7 @@ import {
   deleteAttendance,
 } from "../features/attendance/attendanceSlice";
 import AttendanceForm from "./AttendanceForm";
+import {debounce} from "lodash";
 
 import { DataGrid } from "@mui/x-data-grid";
 import { Button, TextField } from "@mui/material";
@@ -22,6 +23,7 @@ function AttendancePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
 
   useEffect(() => {
   }, [dispatch]);
@@ -29,6 +31,19 @@ function AttendancePage() {
   useEffect(() => {
     dispatch(fetchAttendances({ page, search }));
   }, [dispatch, page, search]);
+
+  const debouncedSearch = React.useMemo(
+    () =>
+      debounce((value) => {
+        setSearch(value);
+      }, 500), // 500ms debounce
+    []
+  );
+
+  const handleSearchChange = (e) => {
+    setSearchInput(e.target.value); // update immediately for UI
+    debouncedSearch(e.target.value); // trigger API after debounce
+  };
 
   const handleDelete = async (id) => {
     if (isDeleting) return;
@@ -58,20 +73,15 @@ function AttendancePage() {
       headerName: "Actions",
       flex: 1,
       renderCell: (params) => (
-        <div className="space-x-2">
-          <button
-            className="px-3 py-1 bg-yellow-500 text-white rounded"
-            onClick={() => handleEdit(params.row)}
-          >
-            Edit
-          </button>
-          <button
-            className="px-3 py-1 bg-red-600 text-white rounded"
-            onClick={() => handleDelete(params.row.id)}
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Deleting..." : "Delete"}
-          </button>
+        <div className="w-full h-full flex items-center justify-start space-x-2">
+        <Button variant="contained" color="warning" size="small" onClick={() => handleEdit(params.row)}>
+          Edit
+        </Button>
+        <Button variant="contained" color="error" size="small" onClick={() => handleDelete(params.row.id)} 
+            disabled={isDeleting}>
+
+        {isDeleting ? "Deleting..." : "Delete"}
+        </Button>
         </div>
       ),
     },
@@ -96,8 +106,8 @@ function AttendancePage() {
       <div className="mb-4">
         <TextField
           placeholder="Search by employee"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={searchInput} // immediate update
+          onChange={handleSearchChange}
           fullWidth
         />
       </div>

@@ -77,6 +77,7 @@ const employeeSlice = createSlice({
     status: "idle",
     error: null,
     pagination: {},
+    employees: []
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -96,6 +97,10 @@ const employeeSlice = createSlice({
         }));
         state.pagination = action.payload.pagination;
         state.status = "succeeded";
+      })
+      .addCase(searchEmployees.fulfilled, (state, action) => {
+        state.employees = action.payload.data
+        console.log(state.employees,'state employees')
       })
   },
 });

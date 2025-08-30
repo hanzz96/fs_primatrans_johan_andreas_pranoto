@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import AsyncSelect from "react-select/async";
 import { useDispatch, useSelector } from "react-redux";
+import {debounce} from "lodash";
 import {
   createAttendance,
   updateAttendance,
@@ -9,7 +10,7 @@ import {
 } from "../features/attendance/attendanceSlice";
 import { handleApiError } from "../utils/errorHandler";
 import {
-    fetchEmployees,
+    searchEmployees
   } from "../features/employee/employeeSlice";
 
 import { Button, TextField, Modal } from "@mui/material";
@@ -47,8 +48,9 @@ function AttendanceForm({ open, onClose, editData, page }) {
 
   const fetchEmployee = async (inputValue = "") => {
     try {
-      const data = await dispatch(fetchEmployees(inputValue)).unwrap();
-      const mapped = data.map((shift) => ({
+      const data = await dispatch(searchEmployees(inputValue)).unwrap();
+      console.log(data.data,'on menu');
+      const mapped = data.data.map((shift) => ({
         value: shift.id,
         label: shift.full_name,
       }));
@@ -66,6 +68,27 @@ function AttendanceForm({ open, onClose, editData, page }) {
       return [];
     }
   };
+
+  const fetchEmployeeDebounced = React.useMemo(
+    () =>
+      debounce(async (inputValue, callback) => {
+        try {
+          // Call your API or Redux action with the search term
+          const data = await dispatch(searchEmployees(inputValue)).unwrap();
+          console.log(data,'fetch');
+          const options = data.data.map((e) => ({
+            value: e.id,
+            label: `${e.full_name}`,
+          }));
+          setOptions(options);
+          callback(options);
+        } catch (error) {
+          console.error("Error fetching employees:", error);
+          callback([]);
+        }
+      }, 500), // 500ms debounce
+    [dispatch]
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -113,11 +136,8 @@ function AttendanceForm({ open, onClose, editData, page }) {
             styles={{
               menuPortal: (base) => ({ ...base, zIndex: 9999 }),
             }}
-            defaultOptions={employees.map((e) => ({
-              value: e.id,
-              label: `${e.first_name} ${e.last_name}`,
-            }))}
-            loadOptions={loadEmployeeOptions}
+            defaultOptions={options}
+            loadOptions={fetchEmployeeDebounced}
             onChange={(selected) =>
               setForm({
                 ...form,

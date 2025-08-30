@@ -19,8 +19,8 @@ class AttendanceController extends Controller
     {
         try {
             $perPage = $request->get('per_page', 10);
-            $attendances = $this->attendanceService->getAll($perPage);
-
+            $search = $request->get('search', null);
+            $attendances = $this->attendanceService->getAll($perPage, $search);
             return $this->responsePayload([
                 "data" => $attendances->items(),
                 "pagination" => [
