@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres_16_primatrans
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: app_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/postgres-data:/var/lib/postgresql/data
+    networks:
+      - db_net
+  redis:
+    image: redis:7-alpine
+    container_name: redis_primatrans
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./db/redis-data:/data
+    networks:
+      - db_net
+
+networks:
+  db_net:
+    driver: bridge
