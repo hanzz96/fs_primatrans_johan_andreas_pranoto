@@ -17,64 +17,84 @@ class WorkShiftController extends Controller
 
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 10);
-        $workShifts = $this->workShiftService->getAll($perPage);
-    
-        return $this->responsePayload([
-            "data" => $workShifts->items(),
-            "pagination" => [
-                "current_page" => $workShifts->currentPage(),
-                "per_page" => $workShifts->perPage(),
-                "total" => $workShifts->total(),
-                "last_page" => $workShifts->lastPage(),
-            ]
-        ]);
+        try {
+            $perPage = $request->get('per_page', 10);
+            $workShifts = $this->workShiftService->getAll($perPage);
+        
+            return $this->responsePayload([
+                "data" => $workShifts->items(),
+                "pagination" => [
+                    "current_page" => $workShifts->currentPage(),
+                    "per_page" => $workShifts->perPage(),
+                    "total" => $workShifts->total(),
+                    "last_page" => $workShifts->lastPage(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 
     public function store(Request $request)
     {
-        $workShift = $this->workShiftService->create($request->all());
+        try {
+            $workShift = $this->workShiftService->create($request->all());
 
-        return $this->responsePayload([
-            "message" => "Work shift created successfully",
-            "data" => $workShift
-        ]);
+            return $this->responsePayload([
+                "message" => "Work shift created successfully",
+                "data" => $workShift
+            ]);
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 
     public function show($id)
     {
-        $workShift = $this->workShiftService->findById($id);
-        if (!$workShift) {
-            return response()->json(["code" => 404, "message" => "Work shift not found"], 404);
-        }
+        try {
+            $workShift = $this->workShiftService->findById($id);
+            if (!$workShift) {
+                return response()->json(["code" => 404, "message" => "Work shift not found"], 404);
+            }
 
-        return $this->responsePayload([
-            "data" => $workShift
-        ]);
+            return $this->responsePayload([
+                "data" => $workShift
+            ]);
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 
     public function update(Request $request, $id)
     {
-        $updated = $this->workShiftService->update($id, $request->all());
+        try {
+            $updated = $this->workShiftService->update($id, $request->all());
 
-        if (!$updated) {
-            return response()->json(["code" => 404, "message" => "Work shift not found"], 404);
+            if (!$updated) {
+                return response()->json(["code" => 404, "message" => "Work shift not found"], 404);
+            }
+
+            return $this->responsePayload([
+                "message" => "Work shift updated successfully",
+                "data" => $updated
+            ]);
+        } catch (\Exception $e) {
+            throw $e;
         }
-
-        return $this->responsePayload([
-            "message" => "Work shift updated successfully",
-            "data" => $updated
-        ]);
     }
 
     public function destroy($id)
     {
-        $deleted = $this->workShiftService->delete($id);
+        try {
+            $deleted = $this->workShiftService->delete($id);
 
-        if (!$deleted) {
-            return response()->json(["code" => 404, "message" => "Work shift not found"], 404);
+            if (!$deleted) {
+                return response()->json(["code" => 404, "message" => "Work shift not found"], 404);
+            }
+
+            return $this->responseSuccess("Work shift deleted successfully");
+        } catch (\Exception $e) {
+            throw $e;
         }
-
-        return $this->responseSuccess("Work shift deleted successfully");
     }
 }

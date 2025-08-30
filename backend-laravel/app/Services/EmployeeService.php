@@ -35,6 +35,8 @@ class EmployeeService
             }
 
             return DB::transaction(fn () => Employee::create($data));
+        } catch(\Exception $e) {
+            throw $e;
         } finally {
             Redis::del($lockKey);
         }
@@ -66,6 +68,8 @@ class EmployeeService
 
             $employee->update($data);
             return $employee;
+        } catch(\Exception $e) {
+            throw $e;
         } finally {
             Redis::del($lockKey);
         }

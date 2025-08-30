@@ -1,67 +1,100 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
-use App\Models\Attendance;
-use App\Models\Employee;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Services\AttendanceService;
 
 class AttendanceController extends Controller
 {
-    public function index()
+    protected $attendanceService;
+
+    public function __construct(AttendanceService $attendanceService)
     {
-        $attendances = Attendance::with('employee')->get();
-        return response()->json(['data' => $attendances], 200);
+        $this->attendanceService = $attendanceService;
     }
 
-    public function show($id)
+    public function index(Request $request)
     {
-        $attendance = Attendance::with('employee')->find($id);
-        if (!$attendance) {
-            return response()->json(['message' => 'Attendance not found'], 404);
+        try {
+            $perPage = $request->get('per_page', 10);
+            $attendances = $this->attendanceService->getAll($perPage);
+
+            return $this->responsePayload([
+                "data" => $attendances->items(),
+                "pagination" => [
+                    "current_page" => $attendances->currentPage(),
+                    "per_page" => $attendances->perPage(),
+                    "total" => $attendances->total(),
+                    "last_page" => $attendances->lastPage(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            throw $e;
         }
-        return response()->json(['data' => $attendance], 200);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'check_in'    => 'required|date_format:Y-m-d H:i:s',
-            'check_out'   => 'nullable|date_format:Y-m-d H:i:s|after:check_in',
-            'date'        => 'required|date',
-        ]);
+        try {
+            $attendance = $this->attendanceService->create($request->all());
 
-        $attendance = Attendance::create($validated);
-        return response()->json(['message' => 'Attendance created successfully', 'data' => $attendance], 201);
+            return $this->responsePayload([
+                "message" => "Attendance created successfully",
+                "data" => $attendance
+            ]);
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $attendance = $this->attendanceService->findById($id);
+            if (!$attendance) {
+                return response()->json(["code" => 404, "message" => "Attendance not found"], 404);
+            }
+
+            return $this->responsePayload([
+                "data" => $attendance
+            ]);
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 
     public function update(Request $request, $id)
     {
-        $attendance = Attendance::find($id);
-        if (!$attendance) {
-            return response()->json(['message' => 'Attendance not found'], 404);
+        try {
+            $updated = $this->attendanceService->update($id, $request->all());
+
+            if (!$updated) {
+                return response()->json(["code" => 404, "message" => "Attendance not found"], 404);
+            }
+
+            return $this->responsePayload([
+                "message" => "Attendance updated successfully",
+                "data" => $updated
+            ]);
+        } catch (\Exception $e) {
+            throw $e;
         }
-
-        $validated = $request->validate([
-            'employee_id' => 'sometimes|required|exists:employees,id',
-            'check_in'    => 'sometimes|required|date_format:Y-m-d H:i:s',
-            'check_out'   => 'nullable|date_format:Y-m-d H:i:s|after:check_in',
-            'date'        => 'sometimes|required|date',
-        ]);
-
-        $attendance->update($validated);
-        return response()->json(['message' => 'Attendance updated successfully', 'data' => $attendance], 200);
     }
 
     public function destroy($id)
     {
-        $attendance = Attendance::find($id);
-        if (!$attendance) {
-            return response()->json(['message' => 'Attendance not found'], 404);
-        }
+        try {
+            $deleted = $this->attendanceService->delete($id);
 
-        $attendance->delete();
-        return response()->json(['message' => 'Attendance deleted successfully'], 200);
+            if (!$deleted) {
+                return response()->json(["code" => 404, "message" => "Attendance not found"], 404);
+            }
+
+            return $this->responseSuccess("Attendance deleted successfully");
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 }

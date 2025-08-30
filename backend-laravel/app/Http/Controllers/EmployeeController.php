@@ -55,7 +55,7 @@ class EmployeeController extends Controller
                 "data" => $employee
             ]);
         } catch (Exception $e) {
-            return $this->responseError($e->getMessage(), 422);
+            throw $e;
         }
     }
 
@@ -79,7 +79,7 @@ class EmployeeController extends Controller
                 "data" => $updatedEmployee
             ]);
         } catch (Exception $e) {
-            return $this->responseError($e->getMessage(), 422);
+            throw $e;
         }
     }
 
@@ -89,7 +89,7 @@ class EmployeeController extends Controller
             $this->employeeService->delete($employee);
             return $this->responseSuccess("Employee deleted successfully");
         } catch (Exception $e) {
-            return $this->responseError($e->getMessage(), 422);
+            throw $e;
         }
     }
 }
