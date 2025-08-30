@@ -3,42 +3,58 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const API_URL = "http://localhost:8000/api/employees";
-
 // Fetch
 export const fetchEmployees = createAsyncThunk(
   "employees/fetchAll",
-  async (page = 1) => {
-    const response = await axios.get(`${API_URL}?page=${page}`);
-    return response.data;
+  async (page = 1, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_URL}?page=${page}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error || { message: error.message });
+    }
   }
 );
 
 // Create
 export const createEmployee = createAsyncThunk(
   "employees/create",
-  async (data) => {
-    const response = await axios.post(API_URL, data);
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(API_URL, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error || { message: error.message });
+    }
   }
 );
 
 // Update
 export const updateEmployee = createAsyncThunk(
   "employees/update",
-  async ({ id, data }) => {
-    const response = await axios.put(`${API_URL}/${id}`, data);
-    return response.data;
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/${id}`, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error || { message: error.message });
+    }
   }
 );
 
 // Delete
 export const deleteEmployee = createAsyncThunk(
   "employees/delete",
-  async (id) => {
-    await axios.delete(`${API_URL}/${id}`);
-    return id;
+  async (id, { rejectWithValue }) => {
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error || { message: error.message });
+    }
   }
 );
+
 
 const employeeSlice = createSlice({
   name: "employees",

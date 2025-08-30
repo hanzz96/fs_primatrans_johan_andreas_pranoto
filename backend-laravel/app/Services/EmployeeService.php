@@ -32,13 +32,13 @@ class EmployeeService
     public function create(array $data)
     {
         $lockKey = "employee_lock:" . md5($data['nik'] ?? '');
-
-        if (!Redis::setnx($lockKey, 1)) {
-            throw new Exception("Employee creation is locked. Try again later.");
-        }
-        Redis::expire($lockKey, $this->lockTtl);
-
         try {
+    
+            if (!Redis::setnx($lockKey, 1)) {
+                throw new Exception("Employee creation is locked. Try again later.");
+            }
+            Redis::expire($lockKey, $this->lockTtl);
+    
             $exists = Employee::where('nik', $data['nik'])
                 ->orWhere('employee_number', $data['employee_number'])
                 ->exists();
@@ -96,10 +96,15 @@ class EmployeeService
 
     public function delete(int $employee)
     {
-        $findEmployee = Employee::find($employee);
-        if ($findEmployee) {
-            return $findEmployee->delete();
+        try{
+            $findEmployee = Employee::find($employee);
+            if ($findEmployee) {
+                return $findEmployee->delete();
+            }
+            return false;
         }
-        return false;
+        catch(Exception $e) {
+            throw $e;
+        }
     }
 }

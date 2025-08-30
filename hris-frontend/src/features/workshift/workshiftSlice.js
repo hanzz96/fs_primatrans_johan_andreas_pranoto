@@ -3,50 +3,69 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const API_URL = "http://localhost:8000/api/workshifts"; // adjust if needed
-
 // Fetch
 export const fetchWorkshifts = createAsyncThunk(
   "workshifts/fetchAll",
-  async () => {
-    const response = await axios.get(API_URL);
-    return response.data;
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(API_URL);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error || { message: error.message });
+    }
   }
 );
 
 // Create
 export const createWorkshift = createAsyncThunk(
   "workshifts/create",
-  async (data) => {
-    const response = await axios.post(API_URL, data);
-    return response.data;
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(API_URL, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error || { message: error.message });
+    }
   }
 );
 
 // Update
 export const updateWorkshift = createAsyncThunk(
   "workshifts/update",
-  async ({ id, data }) => {
-    const response = await axios.put(`${API_URL}/${id}`, data);
-    return response.data;
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/${id}`, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error || { message: error.message });
+    }
   }
 );
 
 // Delete
 export const deleteWorkshift = createAsyncThunk(
   "workshifts/delete",
-  async (id) => {
-    await axios.delete(`${API_URL}/${id}`);
-    return id;
+  async (id, { rejectWithValue }) => {
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error || { message: error.message });
+    }
   }
 );
 
+// Search
 export const searchWorkShifts = createAsyncThunk(
-    "workShifts/search",
-    async (query) => {
+  "workshifts/search",
+  async (query, { rejectWithValue }) => {
+    try {
       const response = await axios.get(API_URL, { params: { search: query } });
-      console.log(response.data.data)
       return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error || { message: error.message });
     }
+  }
 );
 
 const workshiftSlice = createSlice({

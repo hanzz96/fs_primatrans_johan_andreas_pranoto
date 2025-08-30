@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 // Components
 import Sidebar from "./components/Sidebar";
 
@@ -42,6 +43,15 @@ function App() {
             </Routes>
           </main>
         </div>
+        <ToastContainer  
+            position="top-center"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={true}
+            closeOnClick
+            pauseOnHover
+            draggable
+          />
       </div>
     </Router>
   );

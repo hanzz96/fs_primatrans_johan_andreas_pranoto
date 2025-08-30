@@ -8,6 +8,7 @@ import {
   deleteWorkshift,
 } from "../features/workshift/workshiftSlice";
 import { Button, Modal, Box, TextField, Select, MenuItem, Typography } from "@mui/material";
+import { handleApiError } from "../utils/errorHandler";
 
 const modalStyle = {
   position: "absolute",
@@ -51,7 +52,7 @@ function WorkShifts() {
       setForm({ id: null, name: "", type: "shift", description: "" });
     } catch (error) {
       console.error(error);
-      alert("Failed to save workshift.");
+      handleApiError(error);
     }
   };
   const handleEdit = (row) => {

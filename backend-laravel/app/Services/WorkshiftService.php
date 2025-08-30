@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\WorkShift;
+use Exception;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -28,14 +29,13 @@ class WorkShiftService
     {
         $lockKey = "workshift_lock:" . md5($data['name'] ?? '');
 
-        if (!Redis::setnx($lockKey, 1)) {
-            throw ValidationException::withMessages([
-                'concurrency' => ['WorkShift creation is locked. Try again later.'],
-            ]);
-        }
-        Redis::expire($lockKey, $this->lockTtl);
-
         try {
+            if (!Redis::setnx($lockKey, 1)) {
+                throw ValidationException::withMessages([
+                    'concurrency' => ['WorkShift creation is locked. Try again later.'],
+                ]);
+            }
+            Redis::expire($lockKey, $this->lockTtl);
             // prevent duplicate by name + type
             $exists = WorkShift::where('name', $data['name'])
                 ->where('type', $data['type'])
@@ -52,6 +52,9 @@ class WorkShiftService
                 'type'       => $data['type'],
                 'descriptoin' => $data['description'],
             ]));
+        }
+        catch(Exception $e) {
+            throw $e;
         } finally {
             Redis::del($lockKey);
         }
@@ -71,6 +74,8 @@ class WorkShiftService
 
             $workShift->update($data);
             return $workShift;
+        }catch(Exception $e) {
+            throw $e;
         } finally {
             Redis::del($lockKey);
         }
@@ -78,12 +83,17 @@ class WorkShiftService
 
     public function delete($id)
     {
-        $workShift = WorkShift::find($id);
-        if($workShift) {
-            return $workShift->delete();
+        try{
+            $workShift = WorkShift::find($id);
+            if($workShift) {
+                return $workShift->delete();
+            }
+    
+            return false;
         }
-
-        return false;
+        catch(Exception $e) {
+            throw $e;
+        }
 
     }
 }

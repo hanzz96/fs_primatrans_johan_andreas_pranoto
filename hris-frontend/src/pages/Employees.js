@@ -14,6 +14,7 @@ import {
 
 import { DataGrid } from "@mui/x-data-grid";
 import { Button, Modal, TextField, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
+import { handleApiError } from "../utils/errorHandler";
 
 function Employees() {
   const dispatch = useDispatch();
@@ -101,6 +102,7 @@ function Employees() {
       });
     } catch (error) {
       console.error("Error submitting employee:", error);
+      handleApiError(error);
     } finally {
       setIsSubmitting(false);
     }

@@ -37,18 +37,17 @@ class EmployeeController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            "first_name" => "required|string",
-            "last_name" => "required|string",
-            "birth_date" => "required|date",   // changed
-            "gender" => "required|string|in:male,female",
-            "nik" => "required|string",
-            "employee_number" => "required|string",
-            "position" => "required|string",
-            "work_shift_id" => "nullable|exists:work_shifts,id"
-        ]);
-
         try {
+            $data = $request->validate([
+                "first_name" => "required|string",
+                "last_name" => "required|string",
+                "birth_date" => "required|date",   // changed
+                "gender" => "required|string|in:male,female",
+                "nik" => "required|string",
+                "employee_number" => "required|string",
+                "position" => "required|string",
+                "work_shift_id" => "nullable|exists:work_shifts,id"
+            ]);
             $employee = $this->employeeService->create($data);
 
             return $this->responsePayload([

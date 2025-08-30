@@ -7,7 +7,7 @@ import {
   updateAttendance,
   fetchAttendances,
 } from "../features/attendance/attendanceSlice";
-
+import { handleApiError } from "../utils/errorHandler";
 import {
     fetchEmployees,
   } from "../features/employee/employeeSlice";
@@ -83,6 +83,7 @@ function AttendanceForm({ open, onClose, editData, page }) {
       await dispatch(fetchAttendances(page));
       onClose();
     } catch (err) {
+      handleApiError(err);
       console.error("Error saving attendance:", err);
     } finally {
       setIsSubmitting(false);
