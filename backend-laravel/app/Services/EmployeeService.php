@@ -24,6 +24,8 @@ class EmployeeService
             });
         }
 
+        $query->orderBy('employees.id', 'desc');
+
 
         $employees = $query->paginate($perPage);
         return $employees;

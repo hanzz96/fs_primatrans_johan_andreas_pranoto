@@ -18,7 +18,7 @@ class WorkShiftController extends Controller
     public function index(Request $request)
     {
         try {
-            $perPage = $request->get('per_page', 10);
+            $perPage = $request->get('per_page', 100);
             $search = $request->input('search', null);
             $workShifts = $this->workShiftService->getAll($perPage, $search);
         

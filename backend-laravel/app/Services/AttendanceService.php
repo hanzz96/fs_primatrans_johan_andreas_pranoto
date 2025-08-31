@@ -9,15 +9,27 @@ use PHPUnit\Event\Code\Throwable;
 
 class AttendanceService
 {
-    public function getAll($perPage = 10)
+    public function getAll(int $perPage = 10, $search)
     {
         try {
-            return Attendance::with('employee')->paginate($perPage);
+            $query = Attendance::with('employee');
+    
+            if ($search) {
+                $query->whereHas('employee', function ($q) use ($search) {
+                    $q->where('first_name', 'ilike', "%{$search}%")
+                      ->orWhere('last_name', 'ilike', "%{$search}%")
+                      ->orWhere('employee_number', 'like', "%{$search}%");
+                });
+            }
+    
+            $query->orderBy('attendance_date', 'desc');
+            return $query->paginate($perPage);
+    
         } catch (\Exception $e) {
-            throw $e;
+            throw $e; 
         }
     }
-
+    
     public function create(array $data): Attendance
     {
         try {

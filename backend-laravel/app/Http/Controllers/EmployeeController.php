@@ -19,12 +19,18 @@ class EmployeeController extends Controller
 
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 10);
+        $perPage = $request->get('per_page', 100);
         $search = $request->input('search', null);
         $employees = $this->employeeService->getAll($perPage, $search);
 
         return $this->responsePayload([
-            "data" => $employees
+            "data" => $employees->items(),
+            "pagination" => [
+                "current_page" => $employees->currentPage(),
+                "per_page" => $employees->perPage(),
+                "total" => $employees->total(),
+                "last_page" => $employees->lastPage(),
+            ]
         ]);
     }
 
